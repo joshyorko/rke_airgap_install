@@ -49,19 +49,19 @@ function build () {
   info "checking for sudo / openssl / hauler / zstd / rsync / jq / helm"
 
   echo -e -n "checking sudo "
-  command -v sudo > /dev/null 2>&1 || { echo -e -n "$RED" " ** sudo not found, installing ** ""$NO_COLOR"; yum install sudo -y > /dev/null 2>&1; }
+  command -v sudo > /dev/null 2>&1 || { echo -e -n "$RED" " ** sudo not found, installing ** ""$NO_COLOR"; apt install sudo -y > /dev/null 2>&1; }
   info_ok
 
   echo -e -n "checking openssl "
-  command -v openssl > /dev/null 2>&1 || { echo -e -n "$RED" " ** openssl not found, installing ** ""$NO_COLOR"; yum install openssl -y > /dev/null 2>&1; }
+  command -v openssl > /dev/null 2>&1 || { echo -e -n "$RED" " ** openssl not found, installing ** ""$NO_COLOR"; apt install openssl -y > /dev/null 2>&1; }
   info_ok
 
   echo -e -n "checking rsync "
-  command -v rsync > /dev/null 2>&1 || { echo -e -n "$RED" " ** rsync not found, installing ** ""$NO_COLOR"; yum install rsync -y > /dev/null 2>&1; }
+  command -v rsync > /dev/null 2>&1 || { echo -e -n "$RED" " ** rsync not found, installing ** ""$NO_COLOR"; apt install rsync -y > /dev/null 2>&1; }
   info_ok
 
   echo -e -n "checking zstd "
-  command -v zstd > /dev/null 2>&1 || { echo -e -n "$RED" " ** zstd not found, installing ** ""$NO_COLOR"; yum install zstd -y > /dev/null 2>&1; }
+  command -v zstd > /dev/null 2>&1 || { echo -e -n "$RED" " ** zstd not found, installing ** ""$NO_COLOR"; apt install zstd -y > /dev/null 2>&1; }
   info_ok
 
   echo -e -n "checking helm "
@@ -75,7 +75,7 @@ function build () {
 
   # get jq if needed
   echo -e -n "checking jq "
-  command -v jq >/dev/null 2>&1 || { echo -e -n "$RED" " ** jq was not found, installing ** ""$NO_COLOR"; yum install epel-release -y  > /dev/null 2>&1; yum install -y jq > /dev/null 2>&1; }
+  command -v jq >/dev/null 2>&1 || { echo -e -n "$RED" " ** jq was not found, installing ** ""$NO_COLOR"; apt install epel-release -y  > /dev/null 2>&1; apt install -y jq > /dev/null 2>&1; }
   info_ok
 
   cd /opt/hauler
@@ -195,7 +195,7 @@ EOF
   echo -e "---------------------------------------------------------------------------"
   echo -e $BLUE"    move file to other network..."
   echo -e $YELLOW"    then uncompress with : "$NO_COLOR
-  echo -e "      mkdir /opt/hauler && yum install -y zstd"
+  echo -e "      mkdir /opt/hauler && apt install -y zstd"
   echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
   echo -e "      $0 control"
   echo -e "---------------------------------------------------------------------------"
@@ -269,7 +269,7 @@ EOF
   # mkdir -p /opt/hauler/fileserver/dvd
   # mount -o loop Rocky-8.9-x86_64-dvd1.iso /opt/fileserver/dvd
 
-  # create yum repo file
+  # create apt repo file
   cat << EOF > /opt/hauler/fileserver/hauler.repo
 [hauler]
 name=Hauler Air Gap Server
@@ -291,10 +291,10 @@ EOF
 #gpgcheck=0
 
   # install createrepo
-  if yum list installed createrepo_c > /dev/null 2>&1; then
+  if apt list installed createrepo_c > /dev/null 2>&1; then
     echo "createrepo is already installed"
   else
-    yum install -y createrepo  > /dev/null 2>&1 || fatal "createrepo was not installed, please install"
+    apt install -y createrepo  > /dev/null 2>&1 || fatal "createrepo was not installed, please install"
   fi
   
   # create repo for rancher rpms
@@ -362,8 +362,8 @@ EOF
 sysctl -p > /dev/null 2>&1
 
   # disable firewalld
-  if yum list installed firewalld > /dev/null 2>&1; then 
-    yum remove -y firewalld > /dev/null 2>&1 || fatal "firewalld could not be disabled"
+  if apt list installed firewalld > /dev/null 2>&1; then 
+    apt remove -y firewalld > /dev/null 2>&1 || fatal "firewalld could not be disabled"
     warn "firewalld was removed"
   else
     info "firewalld not installed"
@@ -374,7 +374,7 @@ sysctl -p > /dev/null 2>&1
   for pkg in $base_packages; do
       if ! rpm -q $pkg > /dev/null 2>&1; then
           echo "Installing $pkg..."
-          yum install -y $pkg > /dev/null 2>&1 || fatal "$pkg was not installed, please install"
+          apt install -y $pkg > /dev/null 2>&1 || fatal "$pkg was not installed, please install"
       else
           echo "$pkg is already installed"
       fi
@@ -383,16 +383,16 @@ sysctl -p > /dev/null 2>&1
   systemctl enable --now iscsid > /dev/null 2>&1
   echo -e "[keyfile]\nunmanaged-devices=interface-name:cali*;interface-name:flannel*" > /etc/NetworkManager/conf.d/rke2-canal.conf
 
-  info "adding yum repo"
+  info "adding apt repo"
     # add repo 
-  curl -sfL http://$serverIp:8080/hauler.repo -o /etc/yum.repos.d/hauler.repo || fatal "check `http://$serverIp:8080/hauler.repo` to ensure the hauler.repo exists"
+  curl -sfL http://$serverIp:8080/hauler.repo -o /etc/apt.repos.d/hauler.repo || fatal "check `http://$serverIp:8080/hauler.repo` to ensure the hauler.repo exists"
 
     # set registry override
   mkdir -p /etc/rancher/rke2/
   echo -e "mirrors:\n  \"*\":\n    endpoint:\n      - http://$serverIp:5000" > /etc/rancher/rke2/registries.yaml 
 
-  # clean all the yums
-  yum clean all  > /dev/null 2>&1
+  # clean all the apts
+  apt clean all  > /dev/null 2>&1
 
 }
 
@@ -426,7 +426,7 @@ function deploy_control () {
   echo -e "---\napiVersion: helm.cattle.io/v1\nkind: HelmChartConfig\nmetadata:\n  name: rke2-ingress-nginx\n  namespace: kube-system\nspec:\n  valuesContent: |-\n    controller:\n      config:\n        use-forwarded-headers: true\n      extraArgs:\n        enable-ssl-passthrough: true" > /var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml
 
   # insall rke2 - stig'd
-  yum install -y --disablerepo=* --enablerepo=hauler rke2-server rke2-common rke2-selinux > /dev/null 2>&1 || fatal "yum install rke2 packages didn't work. check the hauler fileserver service."
+  apt install -y --disablerepo=* --enablerepo=hauler rke2-server rke2-common rke2-selinux > /dev/null 2>&1 || fatal "apt install rke2 packages didn't work. check the hauler fileserver service."
   systemctl enable --now rke2-server.service > /dev/null 2>&1 || fatal "rke2-server didn't start"
 
   until systemctl is-active -q rke2-server; do sleep 2; done
@@ -460,7 +460,7 @@ function deploy_worker () {
   echo -e "server: https://$serverIp:9345\ntoken: bootstrapAllTheThings\nwrite-kubeconfig-mode: 0600\n#profile: cis-1.23\nkube-apiserver-arg:\n- \"authorization-mode=RBAC,Node\"\nkubelet-arg:\n- \"protect-kernel-defaults=true\" " > /etc/rancher/rke2/config.yaml
   
   # install rke2
-  yum install -y rke2-agent rke2-common rke2-selinux > /dev/null 2>&1 || fatal "packages didn't install"
+  apt install -y rke2-agent rke2-common rke2-selinux > /dev/null 2>&1 || fatal "packages didn't install"
   systemctl enable --now rke2-agent.service > /dev/null 2>&1 || fatal "rke2-agent didn't start"
   info "worker node running"
 }
