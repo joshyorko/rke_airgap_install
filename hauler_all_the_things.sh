@@ -290,15 +290,15 @@ EOF
 #enabled=1
 #gpgcheck=0
 
-  # install createrepo
-  if apt list installed createrepo_c > /dev/null 2>&1; then
-    echo "createrepo is already installed"
+  # install createrepo_c
+  if apt list installed createrepo_c_c > /dev/null 2>&1; then
+    echo "createrepo_c is already installed"
   else
-    apt install -y createrepo  > /dev/null 2>&1 || fatal "createrepo was not installed, please install"
+    apt install -y createrepo_c  > /dev/null 2>&1 || fatal "createrepo_c was not installed, please install"
   fi
   
   # create repo for rancher rpms
-  createrepo /opt/hauler/fileserver > /dev/null 2>&1 || fatal "createrepo did not finish correctly, please run manually `createrepo /opt/hauler/fileserver`"
+  createrepo_c /opt/hauler/fileserver > /dev/null 2>&1 || fatal "createrepo_c did not finish correctly, please run manually `createrepo_c /opt/hauler/fileserver`"
 
 fi
 
